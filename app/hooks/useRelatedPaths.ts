@@ -1,18 +1,18 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { getRelatedPathsAtPath } from "~/utilities/relatedValues";
 import { useJson } from "./useJson";
 import { useJsonColumnViewState } from "./useJsonColumnView";
 
 export function useRelatedPaths(): string[] {
-  const cache = useRef(new Map<string, Array<string>>());
   const { selectedNodeId } = useJsonColumnViewState();
   const [json] = useJson();
+  const cache = useMemo(() => new Map<string, Array<string>>(), [json]);
 
   return useMemo(() => {
     if (!selectedNodeId) return [];
 
     //check cache
-    const cachedPaths = cache.current.get(selectedNodeId);
+    const cachedPaths = cache.get(selectedNodeId);
     if (cachedPaths) {
       return cachedPaths;
     }
@@ -23,9 +23,9 @@ export function useRelatedPaths(): string[] {
     //cache
     for (let index = 0; index < paths.length; index++) {
       const path = paths[index];
-      cache.current.set(path, paths);
+      cache.set(path, paths);
     }
 
     return paths;
-  }, [selectedNodeId, json]);
+  }, [selectedNodeId, json, cache]);
 }

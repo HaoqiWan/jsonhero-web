@@ -1,6 +1,6 @@
 import { CodeEditor } from "./CodeEditor";
 import { useJson } from "~/hooks/useJson";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import {
   useJsonColumnViewAPI,
   useJsonColumnViewState,
@@ -12,6 +12,7 @@ import {usePreferences} from '~/components/PreferencesProvider'
 // Modified: validated editing and saving a new document snapshot.
 import { useJsonDraft } from "~/hooks/useJsonDraft";
 import { useJsonDoc } from "~/hooks/useJsonDoc";
+import { jsonPathAtCursor } from "~/utilities/jsonDraft";
 
 export function JsonEditor() {
   const [json] = useJson();
@@ -22,11 +23,8 @@ export function JsonEditor() {
   const draft = useJsonDraft();
 
   const jsonMapped = useMemo(() => {
-    if (!doc.readOnly && draft.validation.valid) {
-      return { json: draft.text, pointers: jsonMap.parse(draft.text).pointers };
-    }
     return jsonMap.stringify(json, null, preferences?.indent || 2);
-  }, [json, preferences, doc.readOnly, draft.text, draft.validation]);
+  }, [json, preferences]);
 
   const selection = useMemo<{ start: number; end: number } | undefined>(() => {
     if (!selectedNodeId) {
@@ -47,46 +45,18 @@ export function JsonEditor() {
     }
   }, [selectedNodeId, jsonMapped]);
 
-  const currentSelectedLine = useRef<number | undefined>(undefined);
-
   const onUpdate = useCallback(
     (update: ViewUpdate) => {
-      // Draft offsets no longer match the saved document's preview paths.
-      if (draft.dirty || update.docChanged) return;
-      if (!update.selectionSet) {
-        return;
+      if (!update.docChanged && !update.selectionSet) return;
+      const path = jsonPathAtCursor(update.state.doc.toString(), update.state.selection.main.head);
+      if (path === undefined) return;
+      if (doc.readOnly) {
+        if (path !== selectedNodeId) goToNodeId(path, "editor");
+      } else {
+        draft.setPreviewPath(path);
       }
-
-      const range = update.state.selection.ranges[0];
-      const line = update.state.doc.lineAt(range.anchor);
-
-      if (
-        currentSelectedLine.current &&
-        currentSelectedLine.current === line.number
-      ) {
-        return;
-      }
-
-      currentSelectedLine.current = line.number;
-
-      // Find the key if the selected line using jsonMapped.pointers
-      const pointerEntry = Object.entries(jsonMapped.pointers).find(
-        ([pointer, info]) => {
-          return info.value.line === line.number - 1;
-        }
-      );
-
-      if (!pointerEntry) {
-        return;
-      }
-
-      const [pointer] = pointerEntry;
-
-      const path = JSONHeroPath.fromPointer(pointer);
-
-      goToNodeId(path.toString(), "editor");
     },
-    [goToNodeId, jsonMapped, draft.dirty]
+    [goToNodeId, selectedNodeId, doc.readOnly, draft.setPreviewPath]
   );
 
   return (
@@ -109,7 +79,7 @@ export function JsonEditor() {
         <p role="status" aria-live="polite" className={draft.validation.valid ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}>
           {draft.validation.valid ? "Valid JSON" : `Invalid JSON${draft.validation.line ? ` at line ${draft.validation.line}, column ${draft.validation.column}` : ""}: ${draft.validation.message}`}
         </p>
-        <p className="text-slate-500 dark:text-slate-400">Save copy opens a new document. Other views and previews show the saved JSON.</p>
+        <p className="text-slate-500 dark:text-slate-400">The right panel previews valid edits live. Save copy opens a new document; other views use the saved JSON.</p>
         {draft.saveError && <p role="alert" className="text-red-700 dark:text-red-400">{draft.saveError}</p>}
       </div>}
       <CodeEditor

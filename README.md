@@ -89,8 +89,12 @@ indentation preference; **Reset** discards the draft; undo/redo works in the edi
 editor. Shared documents and remote JSON URLs are not overwritten. Copies are new
 documents with the default retention (they do not inherit a source document's TTL).
 Read-only documents remain non-editable. Drafts survive switches between column,
-tree, and JSON views during the current document session; previews and search use
-the saved document until you save the copy. Reloading or closing a tab with unsaved
+tree, and JSON views during the current document session. In the editor, the right
+panel previews valid edits immediately and follows the field under the cursor,
+including new or renamed fields. Invalid input keeps the last valid preview with
+a paused indicator. The preview includes inferred types, related values, and
+schema. Other views and search use the saved document until you save the copy.
+Reloading or closing a tab with unsaved
 edits prompts before leaving; drafts are not stored across reloads. Saving failures
 keep your draft available for retry. Validation checks JSON syntax, not an inferred
 or user-supplied JSON Schema.

@@ -1,7 +1,7 @@
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useNavigate } from "remix";
 import invariant from "tiny-invariant";
-import { validateJson } from "~/utilities/validateJson";
+import { updateJsonDraft } from "~/utilities/jsonDraft";
 import { usePreferences } from "~/components/PreferencesProvider";
 import { useJson } from "./useJson";
 import { useJsonDoc } from "./useJsonDoc";
@@ -14,11 +14,11 @@ function useDraft() {
   // Keep drafts above the view routes, so switching views cannot lose edits.
   const [original] = useState(() => doc.type === "raw"
     ? doc.contents : JSON.stringify(json, null, preferences?.indent || 2));
-  const [text, setText] = useState(original);
+  const [{ text, validation, preview }, setDraft] = useState(() => updateJsonDraft(original, json));
+  const [previewPath, setPreviewPath] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string>();
   const dirty = text !== original;
-  const validation = useMemo(() => validateJson(text), [text]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -33,7 +33,7 @@ function useDraft() {
   function edit(value: string) {
     if (saving || doc.readOnly) return;
     setSaveError(undefined);
-    setText(value);
+    setDraft(previous => previous.text === value ? previous : updateJsonDraft(value, previous.preview));
   }
 
   async function saveCopy() {
@@ -58,7 +58,7 @@ function useDraft() {
     }
   }
 
-  return { text, edit, dirty, validation, saving, saveError, saveCopy,
+  return { text, edit, dirty, validation, preview, previewPath, setPreviewPath, saving, saveError, saveCopy,
     reset: () => edit(original),
     format: () => {
       if (validation.valid) edit(JSON.stringify(validation.value, null, preferences?.indent || 2));

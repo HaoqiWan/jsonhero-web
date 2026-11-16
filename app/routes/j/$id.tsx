@@ -17,7 +17,7 @@ import { JsonProvider } from "~/hooks/useJson";
 import { JsonDraftProvider } from "~/hooks/useJsonDraft";
 import { Footer } from "~/components/Footer";
 import { Header } from "~/components/Header";
-import { InfoPanel } from "~/components/InfoPanel";
+import { EditorInfoPanel } from "~/components/EditorInfoPanel";
 import Resizable from "~/components/Resizable";
 import { SideBar } from "~/components/SideBar";
 import { JsonColumnViewProvider } from "~/hooks/useJsonColumnView";
@@ -232,7 +232,7 @@ export default function JsonDocumentRoute() {
                           maximumSize={900}
                         >
                           <div className="info-panel flex-grow h-full">
-                            <InfoPanel />
+                            <EditorInfoPanel />
                           </div>
                         </Resizable>
                       </div>

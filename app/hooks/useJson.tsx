@@ -39,3 +39,8 @@ export function useJson(): JsonContextType {
 
   return context;
 }
+
+// A controlled, read-only snapshot for the editor's live inspector.
+export function JsonSnapshotProvider({ children, json }: { children: ReactNode; json: unknown }) {
+  return <JsonContext.Provider value={[json, () => {}]}>{children}</JsonContext.Provider>;
+}
