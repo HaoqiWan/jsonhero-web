@@ -80,6 +80,21 @@ As you can see, holding the `Option` (or `Alt` key on Windows) while moving to a
 
 ### Editor view
 
+<!-- Modified: document editing and validation added in this fork. -->
+JSON view supports editing with live JSON syntax validation. Errors include a line
+and column when available, and invalid JSON cannot be saved. **Format** uses your
+indentation preference; **Reset** discards the draft; undo/redo works in the editor.
+
+**Save copy** validates again on the server, saves a new document, and opens its
+editor. Shared documents and remote JSON URLs are not overwritten. Copies are new
+documents with the default retention (they do not inherit a source document's TTL).
+Read-only documents remain non-editable. Drafts survive switches between column,
+tree, and JSON views during the current document session; previews and search use
+the saved document until you save the copy. Reloading or closing a tab with unsaved
+edits prompts before leaving; drafts are not stored across reloads. Saving failures
+keep your draft available for retry. Validation checks JSON syntax, not an inferred
+or user-supplied JSON Schema.
+
 View your entire JSON document in an editor, but keep the nice previews and related values you get from the sidebar as you move around the document:
 
 ![Editor view](https://raw.githubusercontent.com/triggerdotdev/documentation-hosting/main/images/features-editorview.gif)

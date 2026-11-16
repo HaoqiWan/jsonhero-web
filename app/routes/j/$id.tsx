@@ -13,6 +13,8 @@ import { deleteDocument, getDocument, JSONDocument } from "~/jsonDoc.server";
 import { JsonDocProvider } from "~/hooks/useJsonDoc";
 import { useEffect } from "react";
 import { JsonProvider } from "~/hooks/useJson";
+// Modified: retain editor drafts while switching between document views.
+import { JsonDraftProvider } from "~/hooks/useJsonDraft";
 import { Footer } from "~/components/Footer";
 import { Header } from "~/components/Header";
 import { InfoPanel } from "~/components/InfoPanel";
@@ -195,6 +197,7 @@ export default function JsonDocumentRoute() {
       minimal={loaderData.minimal}
     >
       <JsonProvider initialJson={loaderData.json}>
+        <JsonDraftProvider>
         <JsonSchemaProvider>
           <JsonColumnViewProvider>
             <JsonSearchProvider>
@@ -242,6 +245,7 @@ export default function JsonDocumentRoute() {
             </JsonSearchProvider>
           </JsonColumnViewProvider>
         </JsonSchemaProvider>
+        </JsonDraftProvider>
       </JsonProvider>
     </JsonDocProvider>
   );
