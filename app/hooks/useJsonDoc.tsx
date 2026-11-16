@@ -6,6 +6,7 @@ type JsonDocType = {
   doc: JSONDocument;
   path?: string;
   minimal?: boolean;
+  onSave?: (contents: string) => void;
 };
 
 const JsonDocContext = createContext<JsonDocType | undefined>(undefined);
@@ -15,14 +16,16 @@ export function JsonDocProvider({
   doc,
   path,
   minimal,
+  onSave,
 }: {
   children: ReactNode;
   doc: JSONDocument;
   path?: string;
   minimal?: boolean;
+  onSave?: (contents: string) => void;
 }) {
   return (
-    <JsonDocContext.Provider value={{ doc, path, minimal }}>
+    <JsonDocContext.Provider value={{ doc, path, minimal, onSave }}>
       {children}
     </JsonDocContext.Provider>
   );

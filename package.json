@@ -29,6 +29,8 @@
   },
   "dependencies": {
     "@apihero/fetch": "^0.1.0",
+    "@codemirror/commands": "^0.19.8",
+    "@codemirror/history": "^0.19.2",
     "@codemirror/lang-json": "^0.19.1",
     "@codemirror/rangeset": "^0.19.6",
     "@heroicons/react": "^1.0.5",

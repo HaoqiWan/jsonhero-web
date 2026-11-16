@@ -11,6 +11,11 @@ import { getEditorSetup } from "~/utilities/codeMirrorSetup";
 import { darkTheme, lightTheme } from "~/utilities/codeMirrorTheme";
 import { useTheme } from "./ThemeProvider";
 import { useHotkeys } from "react-hotkeys-hook";
+// Modified: support editable documents, undo/redo, and an editor toolbar.
+import { EditorState } from "@codemirror/state";
+import { keymap } from "@codemirror/view";
+import { defaultKeymap } from "@codemirror/commands";
+import { history, historyKeymap } from "@codemirror/history";
 
 export type CodeEditorProps = {
   content: string;
@@ -19,6 +24,7 @@ export type CodeEditorProps = {
   onChange?: (value: string) => void;
   onUpdate?: (update: ViewUpdate) => void;
   selection?: { start: number; end: number };
+  fillHeight?: boolean;
 };
 
 const languages = {
@@ -33,10 +39,11 @@ const defaultProps: CodeEditorDefaultProps = {
   language: "json",
   readOnly: true,
   selection: { start: 0, end: 0 },
+  fillHeight: false,
 };
 
 export function CodeEditor(opts: CodeEditorProps) {
-  const { content, language, readOnly, onChange, onUpdate, selection } = {
+  const { content, language, readOnly, onChange, onUpdate, selection, fillHeight } = {
     ...defaultProps,
     ...opts,
   };
@@ -48,6 +55,8 @@ export function CodeEditor(opts: CodeEditorProps) {
   const languageExtension = languages[language];
 
   extensions.push(languageExtension());
+  extensions.push(EditorState.readOnly.of(readOnly), history(), keymap.of([...defaultKeymap, ...historyKeymap]));
+  extensions.push(EditorView.contentAttributes.of({ "aria-label": "JSON editor" }));
 
   const editor = useRef(null);
   const { setContainer, view, state } = useCodeMirror({
@@ -80,10 +89,8 @@ export function CodeEditor(opts: CodeEditorProps) {
     if (view) {
       setSelectionRef.current = true;
 
-      const selectionStart = selection?.start ?? defaultProps.selection.start;
-      const selectionEnd = selection?.end ?? defaultProps.selection.end;
-
-      const lineNumber = state?.doc.lineAt(selectionStart).number;
+      const selectionStart = Math.min(selection?.start ?? 0, view.state.doc.length);
+      const selectionEnd = Math.min(selection?.end ?? 0, view.state.doc.length);
 
       const transactionSpec: TransactionSpec = {
         selection: { anchor: selectionStart, head: selectionEnd },
@@ -103,17 +110,17 @@ export function CodeEditor(opts: CodeEditorProps) {
    "ctrl+a,meta+a,command+a",
    (e) => {
      e.preventDefault();
-     view?.dispatch({ selection: { anchor: 0, head: state?.doc.length } });
+     view?.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
    },
    [view, state]
  );
 
 
   return (
-    <div>
+    <div className={fillHeight ? "flex-1 min-h-0 overflow-hidden" : undefined}>
       <div
         className={`${
-          minimal ? "h-jsonViewerHeightMinimal" : "h-jsonViewerHeight"
+          fillHeight ? "h-full" : minimal ? "h-jsonViewerHeightMinimal" : "h-jsonViewerHeight"
         } overflow-y-auto no-scrollbar`}
         ref={editor}
       />

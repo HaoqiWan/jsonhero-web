@@ -11,11 +11,13 @@ import {
 import invariant from "tiny-invariant";
 import { deleteDocument, getDocument, JSONDocument } from "~/jsonDoc.server";
 import { JsonDocProvider } from "~/hooks/useJsonDoc";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { JsonProvider } from "~/hooks/useJson";
+// Modified: retain editor drafts while switching between document views.
+import { JsonDraftProvider } from "~/hooks/useJsonDraft";
 import { Footer } from "~/components/Footer";
 import { Header } from "~/components/Header";
-import { InfoPanel } from "~/components/InfoPanel";
+import { EditorInfoPanel } from "~/components/EditorInfoPanel";
 import Resizable from "~/components/Resizable";
 import { SideBar } from "~/components/SideBar";
 import { JsonColumnViewProvider } from "~/hooks/useJsonColumnView";
@@ -178,6 +180,14 @@ export const meta: MetaFunction = ({
 export default function JsonDocumentRoute() {
   const loaderData = useLoaderData<LoaderData>();
 
+  return <JsonDocumentContents key={loaderData.doc.id} loaderData={loaderData} />;
+}
+
+function JsonDocumentContents({ loaderData }: { loaderData: LoaderData }) {
+  const [saved, setSaved] = useState<{ contents: string; revision: number }>();
+  const doc = saved && loaderData.doc.type === "raw" ? { ...loaderData.doc, contents: saved.contents } : loaderData.doc;
+  const json = useMemo(() => saved ? JSON.parse(saved.contents) : loaderData.json, [saved, loaderData.json]);
+
   // Redirect back to `/j/${slug}` if the path is set, that way refreshing the page doesn't go to the path in the url.
   const location = useLocation();
 
@@ -189,12 +199,14 @@ export default function JsonDocumentRoute() {
 
   return (
     <JsonDocProvider
-      doc={loaderData.doc}
+      doc={doc}
+      onSave={contents => setSaved(previous => ({ contents, revision: (previous?.revision ?? 0) + 1 }))}
       path={loaderData.path}
       key={loaderData.doc.id}
       minimal={loaderData.minimal}
     >
-      <JsonProvider initialJson={loaderData.json}>
+      <JsonProvider key={saved?.revision ?? 0} initialJson={json}>
+        <JsonDraftProvider>
         <JsonSchemaProvider>
           <JsonColumnViewProvider>
             <JsonSearchProvider>
@@ -229,7 +241,7 @@ export default function JsonDocumentRoute() {
                           maximumSize={900}
                         >
                           <div className="info-panel flex-grow h-full">
-                            <InfoPanel />
+                            <EditorInfoPanel />
                           </div>
                         </Resizable>
                       </div>
@@ -242,6 +254,7 @@ export default function JsonDocumentRoute() {
             </JsonSearchProvider>
           </JsonColumnViewProvider>
         </JsonSchemaProvider>
+        </JsonDraftProvider>
       </JsonProvider>
     </JsonDocProvider>
   );

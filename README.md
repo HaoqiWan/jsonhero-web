@@ -80,6 +80,36 @@ As you can see, holding the `Option` (or `Alt` key on Windows) while moving to a
 
 ### Editor view
 
+<!-- Modified: document editing and validation added in this fork. -->
+JSON view supports editing with live JSON syntax validation. Errors include a line
+and column when available, and invalid JSON cannot be saved. **Format** uses your
+indentation preference; **Reset** discards the draft; undo/redo works in the editor.
+
+**Save** validates again on the server and updates the current raw JSON document
+without changing its ID or URL. Its existing expiry and metadata are preserved.
+After saving, the editor starts a new clean draft and the other views and search
+refresh to the saved contents. **Reset** returns to that latest saved contents.
+
+**Save copy** creates a separate document and opens its new URL; the source stays
+unchanged. Copies use default retention rather than inheriting the source TTL.
+Remote URL documents offer **Save copy** only, creating an editable raw snapshot
+without writing back to the remote source.
+
+In-place saves follow the existing link-access/read-only model: editable shared
+links show the newly saved contents, and concurrent saves are last-write-wins.
+This feature does not add user accounts, ownership checks or version history.
+
+Read-only documents remain non-editable. Drafts survive switches between column,
+tree, and JSON views during the current document session. In the editor, the right
+panel previews valid edits immediately and follows the field under the cursor,
+including new or renamed fields. Invalid input keeps the last valid preview with
+a paused indicator. The preview includes inferred types, related values, and
+schema. Other views and search use the saved document until you save.
+Reloading or closing a tab with unsaved
+edits prompts before leaving; drafts are not stored across reloads. Saving failures
+keep your draft available for retry. Validation checks JSON syntax, not an inferred
+or user-supplied JSON Schema.
+
 View your entire JSON document in an editor, but keep the nice previews and related values you get from the sidebar as you move around the document:
 
 ![Editor view](https://raw.githubusercontent.com/triggerdotdev/documentation-hosting/main/images/features-editorview.gif)

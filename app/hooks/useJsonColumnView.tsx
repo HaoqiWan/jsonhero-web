@@ -14,9 +14,11 @@ import {
   generateColumnViewNode,
   calculateStablePath,
   firstChildToDescendant,
+  generateNodesToPath,
 } from "~/utilities/jsonColumnView";
 import { useJson } from "./useJson";
 import { useJsonDoc } from "./useJsonDoc";
+import { existingPreviewPath } from "~/utilities/jsonDraft";
 
 export type JsonColumnViewState = ColumnViewInstanceState;
 export type JsonColumnViewAPI = ColumnViewAPI;
@@ -115,7 +117,7 @@ export function JsonColumnViewProvider({ children }: { children: ReactNode }) {
 
   const { state, api } = useColumnView({
     rootNode,
-    initialState: initialNodeId ?? "$",
+    initialState: existingPreviewPath(json, initialNodeId ?? "$"),
     stateReducer: jsonReducer,
   });
 
@@ -141,7 +143,7 @@ export function JsonColumnViewProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    api.goToNodeId(restoredState.selectedNodeId, "localStorage");
+    api.goToNodeId(existingPreviewPath(json, restoredState.selectedNodeId), "localStorage");
   }, [doc.id, isStateRestored.current, state, api]);
 
   // This is setting the state
@@ -181,6 +183,28 @@ export function useJsonColumnViewState(): JsonColumnViewState {
   );
 
   return context;
+}
+
+// Scope draft navigation to the inspector so paths added in the draft cannot
+// enter the saved document's tree, search results, or navigation history.
+export function JsonPreviewSelectionProvider({ children, path, onSelect }: {
+  children: ReactNode;
+  path?: string;
+  onSelect: (path: string) => void;
+}) {
+  const [json] = useJson();
+  const savedState = useJsonColumnViewState();
+  const savedApi = useJsonColumnViewAPI();
+  const requested = path ?? savedState.selectedNodeId ?? "$";
+  const selectedNodeId = existingPreviewPath(json, requested);
+  const selectedNodes = React.useMemo(() => generateNodesToPath(json, selectedNodeId), [json, selectedNodeId]);
+  const selectedPath = selectedNodes.map(node => node.id);
+  const state = { ...savedState, selectedNodeId, highlightedNodeId: selectedNodeId,
+    selectedNodes, selectedPath, highlightedPath: selectedPath };
+  const api = { ...savedApi, goToNodeId: onSelect };
+  return <JsonColumnViewAPIContext.Provider value={api}>
+    <JsonColumnViewStateContext.Provider value={state}>{children}</JsonColumnViewStateContext.Provider>
+  </JsonColumnViewAPIContext.Provider>;
 }
 
 export function useJsonColumnViewAPI(): JsonColumnViewAPI {

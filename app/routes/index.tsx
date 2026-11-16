@@ -13,7 +13,7 @@ import {
 } from "../services/toast.server";
 import { json, useLoaderData } from "remix";
 import ToastPopover from "../components/UI/ToastPopover";
-import { HomeTriggerDevBanner } from "~/components/Home/HomeTriggerDevBanner";
+// Modified: removed an unused import of a missing banner component so type checks pass.
 
 type LoaderData = { toastMessage?: ToastMessage };
 

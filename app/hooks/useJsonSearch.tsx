@@ -219,7 +219,12 @@ export function JsonSearchProvider({
         json,
       },
     });
-  }, [json, workerRef.current]);
+    // Modified: dispose the previous document's index when a saved copy opens.
+    return () => {
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, [json, handleWorkerMessage]);
 
   useEffect(() => {
     if (state.status !== "searching") {
