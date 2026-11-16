@@ -9,7 +9,7 @@ import { ViewUpdate } from "@uiw/react-codemirror";
 import jsonMap from "json-source-map";
 import { JSONHeroPath } from "@jsonhero/path";
 import {usePreferences} from '~/components/PreferencesProvider'
-// Modified: validated editing and saving a new document snapshot.
+// Modified: validated editing, stable-URL saves and optional copies.
 import { useJsonDraft } from "~/hooks/useJsonDraft";
 import { useJsonDoc } from "~/hooks/useJsonDoc";
 import { jsonPathAtCursor } from "~/utilities/jsonDraft";
@@ -63,10 +63,15 @@ export function JsonEditor() {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-slate-300 dark:border-slate-600 text-sm text-slate-700 dark:text-slate-200">
         {doc.readOnly ? <span>Read-only document</span> : <>
-          <button type="button" onClick={draft.saveCopy}
+          {doc.type === "raw" && <button type="button" onClick={draft.save}
             disabled={!draft.dirty || !draft.validation.valid || draft.saving}
             className="rounded-sm px-3 py-1 bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">
-            {draft.saving ? "Saving…" : "Save copy"}
+            {draft.saving ? "Saving…" : "Save"}
+          </button>}
+          <button type="button" onClick={draft.saveCopy}
+            disabled={!draft.validation.valid || draft.saving}
+            className="rounded-sm px-3 py-1 bg-slate-200 dark:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Save copy
           </button>
           <button type="button" onClick={draft.format} disabled={!draft.validation.valid || draft.saving}
             className="rounded-sm px-3 py-1 bg-slate-200 dark:bg-slate-700 disabled:opacity-50">Format</button>
@@ -79,7 +84,7 @@ export function JsonEditor() {
         <p role="status" aria-live="polite" className={draft.validation.valid ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}>
           {draft.validation.valid ? "Valid JSON" : `Invalid JSON${draft.validation.line ? ` at line ${draft.validation.line}, column ${draft.validation.column}` : ""}: ${draft.validation.message}`}
         </p>
-        <p className="text-slate-500 dark:text-slate-400">The right panel previews valid edits live. Save copy opens a new document; other views use the saved JSON.</p>
+        <p className="text-slate-500 dark:text-slate-400">{doc.type === "raw" ? "Save updates this document at the same URL. Save copy creates a separate document." : "This document loads from a remote URL. Save copy creates an editable local snapshot."} The right panel previews valid edits live.</p>
         {draft.saveError && <p role="alert" className="text-red-700 dark:text-red-400">{draft.saveError}</p>}
       </div>}
       <CodeEditor

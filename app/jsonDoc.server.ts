@@ -128,6 +128,18 @@ export async function updateDocument(
   return updated;
 }
 
+// KV overwrites do not retain expiry/metadata automatically.
+export async function saveDocumentContents(document: RawJsonDocument, contents: string): Promise<void> {
+  JSON.parse(contents);
+  const keys = await DOCUMENTS.list({ prefix: document.id, limit: 1 });
+  const stored = keys.keys.find(key => key.name === document.id);
+  if (!stored) throw new Error("Document no longer exists");
+  await DOCUMENTS.put(document.id, JSON.stringify({ ...document, contents }), {
+    expiration: stored.expiration,
+    metadata: stored.metadata,
+  });
+}
+
 export async function deleteDocument(slug: string): Promise<void> {
   await DOCUMENTS.delete(slug);
 }

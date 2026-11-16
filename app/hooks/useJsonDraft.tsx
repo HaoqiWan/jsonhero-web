@@ -7,7 +7,7 @@ import { useJson } from "./useJson";
 import { useJsonDoc } from "./useJsonDoc";
 
 function useDraft() {
-  const { doc } = useJsonDoc();
+  const { doc, onSave } = useJsonDoc();
   const [json] = useJson();
   const [preferences] = usePreferences();
   const navigate = useNavigate();
@@ -36,12 +36,12 @@ function useDraft() {
     setDraft(previous => previous.text === value ? previous : updateJsonDraft(value, previous.preview));
   }
 
-  async function saveCopy() {
-    if (saving || doc.readOnly || !dirty || !validation.valid) return;
+  async function save(asCopy: boolean) {
+    if (saving || doc.readOnly || !validation.valid || (!asCopy && (!dirty || doc.type !== "raw"))) return;
     setSaving(true);
     setSaveError(undefined);
     try {
-      const response = await fetch(`/actions/${encodeURIComponent(doc.id)}/saveCopy`, {
+      const response = await fetch(`/actions/${encodeURIComponent(doc.id)}/${asCopy ? "saveCopy" : "save"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ contents: text }),
@@ -50,7 +50,8 @@ function useDraft() {
       if (!response.ok || typeof result.id !== "string") {
         throw new Error(result.error || "Could not save JSON. Please try again.");
       }
-      navigate(`/j/${encodeURIComponent(result.id)}/editor`);
+      if (asCopy) navigate(`/j/${encodeURIComponent(result.id)}/editor`);
+      else onSave?.(text);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Could not save JSON. Please try again.");
     } finally {
@@ -58,7 +59,7 @@ function useDraft() {
     }
   }
 
-  return { text, edit, dirty, validation, preview, previewPath, setPreviewPath, saving, saveError, saveCopy,
+  return { text, edit, dirty, validation, preview, previewPath, setPreviewPath, saving, saveError, save: () => save(false), saveCopy: () => save(true),
     reset: () => edit(original),
     format: () => {
       if (validation.valid) edit(JSON.stringify(validation.value, null, preferences?.indent || 2));

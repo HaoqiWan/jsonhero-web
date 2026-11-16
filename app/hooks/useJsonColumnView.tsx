@@ -117,7 +117,7 @@ export function JsonColumnViewProvider({ children }: { children: ReactNode }) {
 
   const { state, api } = useColumnView({
     rootNode,
-    initialState: initialNodeId ?? "$",
+    initialState: existingPreviewPath(json, initialNodeId ?? "$"),
     stateReducer: jsonReducer,
   });
 
@@ -143,7 +143,7 @@ export function JsonColumnViewProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    api.goToNodeId(restoredState.selectedNodeId, "localStorage");
+    api.goToNodeId(existingPreviewPath(json, restoredState.selectedNodeId), "localStorage");
   }, [doc.id, isStateRestored.current, state, api]);
 
   // This is setting the state
